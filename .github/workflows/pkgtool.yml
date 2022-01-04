@@ -25,10 +25,8 @@ jobs:
         dotnet-version: 6.0.x
     - name: Restore dependencies
       run: cd PkgTool && dotnet restore
-    - name: Build
-      run: cd PkgTool && dotnet build --no-restore
-    - name: Publish for Linux x64
-      run: cd PkgTool && dotnet publish --no-build -p:PublishProfile=${{ matrix.pubprofile }}
+    - name: Publish for ${{ matrix.pubprofile }}
+      run: cd PkgTool && dotnet publish -p:PublishProfile=${{ matrix.pubprofile }}
     - name: Test
       run: cd LibOrbisPkgTests && dotnet test --no-build --verbosity normal
     - name: Upload
