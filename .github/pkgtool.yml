@@ -1,0 +1,39 @@
+name: PkgTool Only
+
+on: [ push, pull_request ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pubprofile: [ 'LinuxToolProfile', 'MacToolProfile', 'WindowsToolProfile' ]
+        include:
+        - pubprofile: 'LinuxToolProfile'
+          pubdirsuff: 'linux-x64'
+        - pubprofile: 'MacToolProfile'
+          pubdirsuff: 'osx-x64'
+        - pubprofile: 'WindowsToolProfile'
+          pubdirsuff: 'win-x64'
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1.9.0
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore dependencies
+      run: cd PkgTool && dotnet restore
+    - name: Build
+      run: cd PkgTool && dotnet build --no-restore
+    - name: Publish for Linux x64
+      run: cd PkgTool && dotnet publish --no-build -p:PublishProfile=${{ matrix.pubprofile }}
+    - name: Test
+      run: cd LibOrbisPkgTests && dotnet test --no-build --verbosity normal
+    - name: Upload
+      uses: actions/upload-artifact@v2
+      with:
+        name: PkgTool built with ${{ matrix.pubprofile }}
+        path: PkgTool/bin/Release/net6.0/publish/${{ matrix.pubdirsuff }}/
+
