@@ -501,9 +501,9 @@ namespace PkgTool
         new List<ArgDef>(),
         _ => {
           var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-          var version = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location).FileVersion;
+          var version = assembly.GetName().Version.ToString();
           var libAssembly = System.Reflection.Assembly.GetAssembly(typeof(Pkg));
-          var libVersion = System.Diagnostics.FileVersionInfo.GetVersionInfo(libAssembly.Location).FileVersion;
+          var libVersion = libAssembly.GetName().Version.ToString();
           Console.WriteLine("PkgTool (c) 2020 Maxton");
           Console.WriteLine("LibOrbisPkg version " + libVersion);
           Console.WriteLine("PkgTool version " + version);
