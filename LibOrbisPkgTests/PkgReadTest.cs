@@ -16,17 +16,15 @@ namespace LibOrbisPkgTests
   [TestClass]
   public class PkgReadTest
   {
-    private static byte[] TestFile = new byte[] { 1, 2, 3, 4, 255, 255, 0, 0 };
-    private TempFile pkgFile;
-    private PkgProperties props;
+    private static readonly byte[] TestFile = new byte[] { 1, 2, 3, 4, 255, 255, 9, 10, 11, 12, 0, 0 };
+    private readonly TempFile pkgFile = new();
+    private readonly PkgProperties props = TestHelper.MakeProperties();
 
     [TestInitialize]
     public void Initialize()
     {
-      pkgFile = new TempFile();
-      props = TestHelper.MakeProperties();
       props.EntitlementKey = "000102030405060708090A0B0C0D0E0F";
-      props.RootDir.Files.Add(new FSFile(s => s.Write(TestFile, 0, 8), "test.file", 8)
+      props.RootDir.Files.Add(new FSFile(s => s.Write(TestFile, 0, TestFile.Length), "test.file", TestFile.Length)
       {
         Parent = props.RootDir
       });
@@ -45,11 +43,9 @@ namespace LibOrbisPkgTests
     [TestMethod]
     public void TestReadBackLicenseDat()
     {
-      using (var s = File.OpenRead(pkgFile.Path))
-      {
-        var pkg = new PkgReader(s).ReadPkg();
-        Assert.IsNotNull(pkg.LicenseDat);
-      }
+      using var s = File.OpenRead(pkgFile.Path);
+      var pkg = new PkgReader(s).ReadPkg();
+      Assert.IsNotNull(pkg.LicenseDat);
     }
 
     /// <summary>
@@ -58,37 +54,31 @@ namespace LibOrbisPkgTests
     [TestMethod]
     public void TestExtractFile()
     {
-      using (var extractedFile = new TempFile())
+      using var extractedFile = new TempFile();
+      TestHelper.OpenPkgFilesystem(pkgFile.Path, inner =>
       {
-        TestHelper.OpenPkgFilesystem(pkgFile.Path, inner =>
-        {
-          inner.GetFile("test.file").Save(extractedFile.Path);
-          Assert.IsTrue(File.Exists(extractedFile.Path));
-          var file = File.ReadAllBytes(extractedFile.Path);
-          CollectionAssert.AreEqual(TestFile, file);
-        });
-      }
+        inner.GetFile("test.file").Save(extractedFile.Path);
+        Assert.IsTrue(File.Exists(extractedFile.Path));
+        var file = File.ReadAllBytes(extractedFile.Path);
+        CollectionAssert.AreEqual(TestFile, file);
+      });
     }
 
     [TestMethod]
     public void TestCreateGP4()
     {
-      using (var extractDir = new TempDir())
-      {
-        Gp4Creator.CreateProjectFromPKG(extractDir.Path, pkgFile.Path);
-        using (var f = File.OpenRead(Path.Combine(extractDir.Path, "Project.gp4")))
-        {
-          var project = Gp4Project.ReadFrom(f);
-          Assert.AreEqual(props.EntitlementKey, project.volume.Package.EntitlementKey);
-          Assert.AreEqual(props.VolumeType, project.volume.Type);
-          // TODO: Figure out timezone problems
-          //Assert.AreEqual(props.TimeStamp, project.volume.TimeStamp);
+      using var extractDir = new TempDir();
+      Gp4Creator.CreateProjectFromPKG(extractDir.Path, pkgFile.Path);
+      using var f = File.OpenRead(Path.Combine(extractDir.Path, "Project.gp4"));
+      var project = Gp4Project.ReadFrom(f);
+      Assert.AreEqual(props.EntitlementKey, project.volume.Package.EntitlementKey);
+      Assert.AreEqual(props.VolumeType, project.volume.Type);
+      // TODO: Figure out timezone problems
+      //Assert.AreEqual(props.TimeStamp, project.volume.TimeStamp);
 
 
-          var file = File.ReadAllBytes(Path.Combine(extractDir.Path, "test.file"));
-          CollectionAssert.AreEqual(TestFile, file);
-        }
-      }
+      var file = File.ReadAllBytes(Path.Combine(extractDir.Path, "test.file"));
+      CollectionAssert.AreEqual(TestFile, file);
     }
   }
 }

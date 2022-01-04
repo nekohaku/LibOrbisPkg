@@ -270,19 +270,19 @@ namespace PkgEditor
     private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
     {
       var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-      var version = FileVersionInfo.GetVersionInfo(assembly.Location).FileVersion;
-      var libAssembly = System.Reflection.Assembly.GetAssembly(typeof(LibOrbisPkg.PKG.Pkg));
-      var libVersion = FileVersionInfo.GetVersionInfo(libAssembly.Location).FileVersion;
-      MessageBox.Show(this, 
-        "PkgEditor (c) 2020 Maxton" + Environment.NewLine +
+      var version = assembly.GetName().Version.ToString();
+      var libAssembly = System.Reflection.Assembly.GetAssembly(typeof(Pkg));
+      var libVersion = libAssembly.GetName().Version.ToString();
+      MessageBox.Show( 
+        "PkgEditor (c) 2022 Maxton" + Environment.NewLine +
         "LibOrbisPkg version "+ libVersion + Environment.NewLine +
         "PkgEditor version " + version,
-        "About PkgEditor");
+        "About PkgEditor", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void visitGitHubRepoToolStripMenuItem_Click(object sender, EventArgs e)
     {
-      Process.Start("https://github.com/maxton/LibOrbisPkg");
+      Process.Start(new ProcessStartInfo("https://github.com/maxton/LibOrbisPkg") { UseShellExecute = true });
     }
 
     private void setPKGPFSFileMetadataToolStripMenuItem_Click(object sender, EventArgs e)

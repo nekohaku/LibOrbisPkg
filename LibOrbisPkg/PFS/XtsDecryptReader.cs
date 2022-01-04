@@ -56,12 +56,12 @@ namespace LibOrbisPkg.PFS
         tweakEncryptor.TransformBlock(tweak, 0, 16, encryptedTweak, 0);
         for (int plaintextOffset = 0; plaintextOffset < sector.Length; plaintextOffset += 16)
         {
-          fixed(byte* xor_ = xor)
-          fixed(byte* encryptedTweak_ = encryptedTweak)
-          fixed(byte* sector_ = &sector[plaintextOffset])
+          fixed (byte* xor_ = xor)
+          fixed (byte* encryptedTweak_ = encryptedTweak)
+          fixed (byte* sector_ = &sector[plaintextOffset])
           {
             *((ulong*)xor_) = *((ulong*)sector_) ^ *((ulong*)encryptedTweak_);
-            *((ulong*)xor_+1) = *((ulong*)sector_+1) ^ *((ulong*)encryptedTweak_+1);
+            *((ulong*)xor_ + 1) = *((ulong*)sector_ + 1) ^ *((ulong*)encryptedTweak_ + 1);
           }
           decryptor.TransformBlock(xor, 0, 16, xor, 0);
           fixed (byte* xor_ = xor)
@@ -108,28 +108,31 @@ namespace LibOrbisPkg.PFS
         DecryptSector(ctx, sectorBuf, (ulong)currentSector);
     }
 
-    private Ctx MakeCtx() => new Ctx
+    private Ctx MakeCtx()
     {
-      cipher = new AesManaged
+      var cipher = Aes.Create();
+      cipher.Mode = CipherMode.ECB;
+      cipher.KeySize = 128;
+      cipher.Key = dataKey;
+      cipher.Padding = PaddingMode.None;
+      cipher.BlockSize = 128;
+
+      var tweakCipher = Aes.Create();
+      tweakCipher.Mode = CipherMode.ECB;
+      tweakCipher.KeySize = 128;
+      tweakCipher.Key = tweakKey;
+      tweakCipher.Padding = PaddingMode.None;
+      tweakCipher.BlockSize = 128;
+
+      return new Ctx
       {
-        Mode = CipherMode.ECB,
-        KeySize = 128,
-        Key = dataKey,
-        Padding = PaddingMode.None,
-        BlockSize = 128,
-      },
-      tweakCipher = new AesManaged
-      {
-        Mode = CipherMode.ECB,
-        KeySize = 128,
-        Key = tweakKey,
-        Padding = PaddingMode.None,
-        BlockSize = 128,
-      },
-      xor = new byte[16],
-      encryptedTweak = new byte[16],
-      tweak = new byte[16]
-    };
+        cipher = cipher,
+        tweakCipher = tweakCipher,
+        xor = new byte[16],
+        encryptedTweak = new byte[16],
+        tweak = new byte[16]
+      };
+    }
 
     public void Read(long position, byte[] buffer, int offset, int count)
     {

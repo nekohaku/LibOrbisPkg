@@ -202,15 +202,14 @@ namespace LibOrbisPkg.Util
     // TODO
     public static int AesCbcCfb128Encrypt(byte[] @out, byte[] @in, int size, byte[] key, byte[] iv)
     {
-      var cipher = new AesManaged
-      {
-        Mode = CipherMode.CBC,
-        KeySize = 128,
-        Key = key,
-        IV = iv,
-        Padding = PaddingMode.None,
-        BlockSize = 128,
-      };
+      var cipher = Aes.Create();
+      cipher.Mode = CipherMode.CBC;
+      cipher.KeySize = 128;
+      cipher.Key = key;
+      cipher.IV = iv;
+      cipher.Padding = PaddingMode.None;
+      cipher.BlockSize = 128;
+
       var tmp = new byte[size];
       using (var pt_stream = new MemoryStream(@in))
       using (var ct_stream = new MemoryStream(tmp))
@@ -224,15 +223,13 @@ namespace LibOrbisPkg.Util
     }
     public static int AesCbcCfb128Decrypt(byte[] @out, byte[] @in, int size, byte[] key, byte[] iv)
     {
-      var cipher = new AesManaged
-      {
-        Mode = CipherMode.CBC,
-        KeySize = 128,
-        Key = key,
-        IV = iv,
-        Padding = PaddingMode.None,
-        BlockSize = 128,
-      };
+      var cipher = Aes.Create();
+      cipher.Mode = CipherMode.CBC;
+      cipher.KeySize = 128;
+      cipher.Key = key;
+      cipher.IV = iv;
+      cipher.Padding = PaddingMode.None;
+      cipher.BlockSize = 128;
       var tmp = new byte[size];
       using (var ct_stream = new MemoryStream(@in))
       using (var pt_stream = new MemoryStream(tmp))

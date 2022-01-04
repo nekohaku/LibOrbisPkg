@@ -14,7 +14,8 @@ namespace LibOrbisPkgTests
 {
   static class TestHelper
   {
-    private readonly static DateTime PkgDate = new DateTime(2013, 03, 15, 12, 00, 00, CultureInfo.InvariantCulture.Calendar);
+    private readonly static DateTime PkgDate = new(2013, 03, 15, 12, 00, 00, CultureInfo.InvariantCulture.Calendar);
+
     public static PkgProperties MakeProperties(
         string ContentId = "UP0000-TEST00000_00-0000000000000000",
         DateTime? CreationDate = null,
@@ -23,8 +24,8 @@ namespace LibOrbisPkgTests
         string Passcode = "00000000000000000000000000000000",
         DateTime? TimeStamp = null,
         bool UseCreationTime = true,
-        FSDir RootDir = null,
-        FSFile[] sc0Files = null)
+        FSDir? RootDir = null,
+        FSFile[]? sc0Files = null)
     {
       return new PkgProperties()
       {
@@ -39,9 +40,9 @@ namespace LibOrbisPkgTests
       };
     }
 
-    public static FSDir MakeRoot(ParamSfo sfo = null, FSFile[] sc0Files = null)
+    public static FSDir MakeRoot(ParamSfo? sfo = null, FSFile[]? sc0Files = null)
     {
-      if (sfo == null)
+      if (sfo is null)
         sfo = ParamSfo.DefaultAC;
       var root = new FSDir();
       var sysDir = new FSDir()
@@ -53,7 +54,7 @@ namespace LibOrbisPkgTests
       {
         Parent = sysDir
       });
-      if (sc0Files != null)
+      if (sc0Files is not null)
       {
         foreach (var f in sc0Files)
         {
@@ -68,23 +69,16 @@ namespace LibOrbisPkgTests
     // Helper for checking the internal files of a PKG
     public static void OpenPkgFilesystem(string pkgPath, Action<PfsReader> innerPfsAction)
     {
-      Pkg pkg;
-      using (var mmf = MemoryMappedFile.CreateFromFile(pkgPath))
-      {
-        using (var s = mmf.CreateViewStream(0, 0, MemoryMappedFileAccess.Read))
-        {
-          pkg = new PkgReader(s).ReadPkg();
-        }
-        var ekpfs = LibOrbisPkg.Util.Crypto.ComputeKeys(pkg.Header.content_id, "00000000000000000000000000000000", 1);
-        var outerPfsOffset = (long)pkg.Header.pfs_image_offset;
-        using (var acc = mmf.CreateViewAccessor(outerPfsOffset, (long)pkg.Header.pfs_image_size, MemoryMappedFileAccess.Read))
-        {
-          var outerPfs = new PfsReader(acc, pkg.Header.pfs_flags, ekpfs);
-          var inner = new PfsReader(new PFSCReader(outerPfs.GetFile("pfs_image.dat").GetView()));
-          // Check that the sce_sys directory exists
-          innerPfsAction(inner);
-        }
-      }
+      using var mmf = MemoryMappedFile.CreateFromFile(pkgPath);
+      using var s = mmf.CreateViewStream(0, 0, MemoryMappedFileAccess.Read);
+      Pkg pkg = new PkgReader(s).ReadPkg();
+      var ekpfs = LibOrbisPkg.Util.Crypto.ComputeKeys(pkg.Header.content_id, "00000000000000000000000000000000", 1);
+      var outerPfsOffset = (long)pkg.Header.pfs_image_offset;
+      using var acc = mmf.CreateViewAccessor(outerPfsOffset, (long)pkg.Header.pfs_image_size, MemoryMappedFileAccess.Read);
+      var outerPfs = new PfsReader(acc, pkg.Header.pfs_flags, ekpfs);
+      var inner = new PfsReader(new PFSCReader(outerPfs.GetFile("pfs_image.dat").GetView()));
+      // Check that the sce_sys directory exists
+      innerPfsAction(inner);
     }
 
     public static void OpenPkgFilesystem(System.IO.Stream pkgStream, Action<PfsReader> innerPfsAction)
@@ -93,24 +87,24 @@ namespace LibOrbisPkgTests
       pkg = new PkgReader(pkgStream).ReadPkg();
       var ekpfs = LibOrbisPkg.Util.Crypto.ComputeKeys(pkg.Header.content_id, "00000000000000000000000000000000", 1);
       var outerPfsOffset = (long)pkg.Header.pfs_image_offset;
-      using (var acc = new LibOrbisPkg.Util.StreamReader(pkgStream, outerPfsOffset))
-      {
-        var outerPfs = new PfsReader(acc, pkg.Header.pfs_flags, ekpfs);
-        var inner = new PfsReader(new PFSCReader(outerPfs.GetFile("pfs_image.dat").GetView()));
-        // Check that the sce_sys directory exists
-        innerPfsAction(inner);
-      }
+      using var acc = new LibOrbisPkg.Util.StreamReader(pkgStream, outerPfsOffset);
+      var outerPfs = new PfsReader(acc, pkg.Header.pfs_flags, ekpfs);
+      var inner = new PfsReader(new PFSCReader(outerPfs.GetFile("pfs_image.dat").GetView()));
+      // Check that the sce_sys directory exists
+      innerPfsAction(inner);
     }
 
     public class ArrayMemoryReader : LibOrbisPkg.Util.IMemoryReader
     {
-      private byte[] array;
+      private readonly byte[] array;
       public ArrayMemoryReader(byte[] backing)
       {
         array = backing;
       }
       public void Dispose()
-      { }
+      {
+        //...
+      }
 
       public void Read(long pos, byte[] buf, int offset, int count)
       {
