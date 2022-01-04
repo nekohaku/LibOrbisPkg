@@ -1,0 +1,24 @@
+name: PkgEditor for Windows
+
+on: [ push, pull_request ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1.9.0
+      with:
+        dotnet-version: 6.0.x
+    - name: Publish for Windows
+      run: cd PkgEditor && dotnet publish -p:PublishProfile=WindowsEditorProfile
+    - name: Test (Windows)
+      run: cd LibOrbisPkgTests && dotnet test --verbosity normal
+    - name: Upload (Windows)
+      uses: actions/upload-artifact@v2
+      with:
+        name: PkgEditor
+        path: PkgEditor/bin/Release/net6.0-windows/publish/win-x64/
